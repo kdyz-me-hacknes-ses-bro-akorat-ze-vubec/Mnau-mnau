@@ -18,11 +18,11 @@ jobs:
       with:
         node-version: '16'
 
-    - name: Install dependencies
-      run: npm install
+    - name: Create dist directory
+      run: mkdir dist
 
-    - name: Build project
-      run: npm run build
+    - name: Copy necessary files
+      run: cp index.html game.js dist/
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
