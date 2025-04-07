@@ -1,31 +1,115 @@
-name: Deploy to GitHub Pages
+# .github/workflows/deploy.yml
+
+name: Deploy Canvas Game to GitHub Pages
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch: # Allow manual triggering
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      # Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '16'
+      # Create a dist directory for the game
+      - name: Create dist directory
+        run: |
 
-    - name: Create dist directory
-      run: mkdir dist
+          mkdir -p dist/js
+          cp -r js/* dist/js/
+          # Copy root index.html, game.html and other files
+          cp index.html dist/ || echo "Warning: index.html not found or not copied"
+          cp game.html dist/ || echo "Warning: game.html not found or not copied"
+          cp *.css dist/ 2>/dev/null || echo "No CSS files found"
+          cp *.png dist/ 2>/dev/null || echo "No PNG files found"
+          cp *.jpg dist/ 2>/dev/null || echo "No JPG files found"
+          cp *.ico dist/ 2>/dev/null || echo "No ICO files found"
 
-    - name: Copy necessary files
-      run: cp index.html game.js dist/
+          # Create a simple index.html if none exists
+          if [ ! -f "dist/index.html" ]; then
+            echo "Creating a basic index.html..."
+            echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Super Mario Vejlupek</title><meta http-equiv="refresh" content="0;url=game.html"></head><body><p>Redirecting to <a href="game.html">game</a>...</p></body></html>' > dist/index.html
+          fi
 
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./dist
+      # Optional: Minify JavaScript and CSS (if you want to optimize)
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+
+      - name: Install minification tools
+        run: npm install -g terser clean-css-cli
+
+      - name: Minify JavaScript
+        run: |
+          # Minify JS in root js directory if it exists
+          if [ -d "dist/js" ]; then
+            for file in dist/js/*.js; do
+              if [ -f "$file" ]; then
+                terser "$file" -o "$file" -c -m
+              fi
+            done
+          fi
+
+          # Minify JS in js if it exists
+          if [ -d "dist/js" ]; then
+            for file in dist/js/*.js; do
+              if [ -f "$file" ]; then
+                terser "$file" -o "$file" -c -m
+              fi
+            done
+          fi
+
+      - name: Minify CSS
+        run: |
+          # Minify CSS in root css directory if it exists
+          if [ -d "dist/css" ]; then
+            for file in dist/css/*.css; do
+              if [ -f "$file" ]; then
+                cleancss -o "$file" "$file"
+              fi
+            done
+          fi
+
+          # Minify CSS in css if it exists
+          if [ -d "dist/css" ]; then
+            for file in dist/css/*.css; do
+              if [ -f "$file" ]; then
+                cleancss -o "$file" "$file"
+              fi
+            done
+          fi
+
+          # Minify any CSS files in the root
+          for file in dist/*.css; do
+            if [ -f "$file" ]; then
+              cleancss -o "$file" "$file"
+            fi
+          done
+
+      # Create a simple version file to track deployments
+      - name: Create version file
+        run: |
+          echo "Deployed on $(date)" > dist/version.txt
+          echo "Commit: ${{ github.sha }}" >> dist/version.txt
+
+      # Upload build artifacts
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: dist
+
+      # Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          force_orphan: true # Create a single-commit history for the gh-pages branch
