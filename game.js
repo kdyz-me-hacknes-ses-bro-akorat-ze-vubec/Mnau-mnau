@@ -26,15 +26,46 @@ const item = {
 };
 
 let keys = {};
+let direction = { x: 0, y: 0 }; // směr pro touch
 
 document.addEventListener("keydown", (e) => keys[e.key] = true);
 document.addEventListener("keyup", (e) => keys[e.key] = false);
 
+// --- Joystick ovládání ---
+const joystick = document.getElementById("joystick");
+let dragging = false;
+let startX, startY;
+
+joystick.addEventListener("touchstart", (e) => {
+  dragging = true;
+  const touch = e.touches[0];
+  startX = touch.clientX;
+  startY = touch.clientY;
+});
+
+joystick.addEventListener("touchmove", (e) => {
+  if (!dragging) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const dx = touch.clientX - startX;
+  const dy = touch.clientY - startY;
+  const maxDist = 40;
+
+  direction.x = Math.max(-1, Math.min(1, dx / maxDist));
+  direction.y = Math.max(-1, Math.min(1, dy / maxDist));
+});
+
+joystick.addEventListener("touchend", () => {
+  dragging = false;
+  direction = { x: 0, y: 0 };
+});
+
+// --- Aktualizace ---
 function update() {
-  if (keys["ArrowUp"]) cat.y -= 3;
-  if (keys["ArrowDown"]) cat.y += 3;
-  if (keys["ArrowLeft"]) cat.x -= 3;
-  if (keys["ArrowRight"]) cat.x += 3;
+  if (keys["ArrowUp"] || direction.y < -0.5) cat.y -= 3;
+  if (keys["ArrowDown"] || direction.y > 0.5) cat.y += 3;
+  if (keys["ArrowLeft"] || direction.x < -0.5) cat.x -= 3;
+  if (keys["ArrowRight"] || direction.x > 0.5) cat.x += 3;
 
   // Kolize s NPC
   if (Math.abs(cat.x - npc.x) < 40 && Math.abs(cat.y - npc.y) < 40) {
@@ -48,6 +79,7 @@ function update() {
   }
 }
 
+// --- Kreslení ---
 function drawCharacter(char) {
   ctx.fillStyle = char.color;
   ctx.fillRect(char.x, char.y, char.size, char.size);
