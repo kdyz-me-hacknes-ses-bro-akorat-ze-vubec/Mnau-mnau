@@ -48,6 +48,14 @@ const sword = {
 let keys = {};
 let direction = { x: 0, y: 0 }; // směr pro touch
 
+let message = ""; // Variable to store the current message
+let messageTimer = 0; // Timer for displaying messages
+
+function showMessage(newMessage) {
+  message = newMessage;
+  messageTimer = 120; // Display the message for 120 frames
+}
+
 document.addEventListener("keydown", (e) => keys[e.key] = true);
 document.addEventListener("keyup", (e) => keys[e.key] = false);
 
@@ -61,6 +69,7 @@ joystick.addEventListener("touchstart", (e) => {
   const touch = e.touches[0];
   startX = touch.clientX;
   startY = touch.clientY;
+  direction = { x: 0, y: 0 }; // Reset direction on touch start
   sword.active = true; // Activate sword on touch
 });
 
@@ -72,13 +81,20 @@ joystick.addEventListener("touchmove", (e) => {
   const dy = touch.clientY - startY;
   const maxDist = 40;
 
-  direction.x = Math.max(-1, Math.min(1, dx / maxDist));
-  direction.y = Math.max(-1, Math.min(1, dy / maxDist));
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist > maxDist) {
+    const scale = maxDist / dist;
+    direction.x = dx * scale / maxDist;
+    direction.y = dy * scale / maxDist;
+  } else {
+    direction.x = dx / maxDist;
+    direction.y = dy / maxDist;
+  }
 });
 
 joystick.addEventListener("touchend", () => {
   dragging = false;
-  direction = { x: 0, y: 0 };
+  direction = { x: 0, y: 0 }; // Reset direction on touch end
   sword.active = false; // Deactivate sword on release
 });
 
@@ -134,9 +150,12 @@ function updateSword() {
   sword.y = cat.y + direction.y * 30;
 
   // Ensure sword is visible even when stationary
-  if (!sword.active || (direction.x === 0 && direction.y === 0)) {
+  if (!sword.active) {
     sword.x = cat.x + 20;
     sword.y = cat.y + 20;
+  } else if (direction.x === 0 && direction.y === 0) {
+    sword.x = cat.x + 30; // Adjusted to ensure proper alignment
+    sword.y = cat.y + 10; // Adjusted to ensure proper alignment
   }
 }
 

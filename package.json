@@ -1,0 +1,8 @@
+{
+  "name": "mnau-mnau",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cp -r . dist && rm -rf dist/.github"
+  },
+  "dependencies": {}
+}
