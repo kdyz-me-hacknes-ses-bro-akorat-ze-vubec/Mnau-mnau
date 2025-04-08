@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Kočičí RPG</title>
+  <style>
+    #joystick {
+      position: fixed;
+      left: 30px;
+      bottom: 30px;
+      width: 100px;
+      height: 100px;
+      background: rgba(100, 100, 100, 0.2);
+      border-radius: 50%;
+      touch-action: none;
+    }
+    canvas {
+      border: 1px solid black;
+      display: block;
+      margin: auto;
+    }
+    body {
+      background: #e0f7fa;
+      font-family: sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div id="joystick"></div>
+  <canvas id="game" width="800" height="600"></canvas>
+  <script src="js/game.js"></script>
+  <script src="js/level2.js"></script>
+</body>
+</html>
